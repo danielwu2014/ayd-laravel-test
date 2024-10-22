@@ -25,7 +25,7 @@ class AdminMiddleware
     {
         $user = auth()->user();
         if (!$user || $this->roleRepository->getRoleName($user->role_id) != 'admin') {
-            return redirect('login')->with('error', 'You do not have admin access.');
+            return redirect()->route('error.page', ['errorMessage' => 'You do not have admin access.']);
         }
         return $next($request);
     }

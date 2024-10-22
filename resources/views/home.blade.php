@@ -15,6 +15,11 @@
                     @endif
 
                     {{ __('You are logged in!') }}
+
+                    <!-- 添加链接到 dev 页面 -->
+                    <div class="mt-4">
+                        <a href="{{ url('/dev') }}" class="btn btn-primary">Go to SQL Executor</a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -31,4 +31,8 @@ Route::middleware('admin')->group(function () {
     Route::post('/dev/export/json', [DevController::class, 'exportJson']);
 });
 
+Route::get('/error', function () {
+    return view('error', ['errorMessage' => request('errorMessage')]);
+})->name('error.page');
+
 
