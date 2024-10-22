@@ -4,6 +4,8 @@ namespace App\Services;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DevService
 {
@@ -50,5 +52,93 @@ class DevService
             'error' => $error,
             'sql' => $sql,
         ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $sql = $request->input('sql_query');
+
+        // 去除 SQL 语句末尾的分号
+        $sql = rtrim($sql, ";");
+
+        // 验证 SQL 是否以 SELECT 开头
+        if (stripos(trim($sql), 'select') !== 0) {
+            return redirect()->back()->with('error', 'Only SELECT statements are allowed.');
+        }
+
+        try {
+            // 执行 SQL 查询
+            $results = DB::select($sql);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        // 创建新的 Spreadsheet 对象
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        if (!empty($results)) {
+            // 添加标题行
+            $columns = array_keys((array)$results[0]); // 获取第一行的列名
+            foreach ($columns as $index => $column) {
+                $sheet->setCellValue(chr(65 + $index) . '1', ucfirst($column)); // A1, B1, C1...
+            }
+
+            // 添加数据
+            $row = 2; // 从第二行开始插入数据
+            foreach ($results as $result) {
+                foreach ($columns as $index => $column) {
+                    $sheet->setCellValue(chr(65 + $index) . $row, $result->$column); // 动态获取列名
+                }
+                $row++;
+            }
+        }
+
+        // 设置文件名
+        $filename = 'query_results.xlsx';
+
+        // 输出文件
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit();
+    }
+
+    public function exportJson(Request $request)
+    {
+        try {
+            $sql = $request->input('sql_query');
+
+            // 去除 SQL 语句末尾的分号
+            $sql = rtrim($sql, ";");
+
+            // 验证 SQL 是否以 SELECT 开头
+            if (stripos(trim($sql), 'select') !== 0) {
+                throw new \Exception('Only SELECT statements are allowed.');
+            }
+
+            // 执行 SQL 查询
+            $results = DB::select($sql);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        // 将结果转换为数组
+        $resultsArray = json_decode(json_encode($results), true); // 转换 stdClass 对象为数组
+
+        // 设置文件名
+        $filename = 'query_results.json';
+
+        // 输出文件头部
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        // 输出 JSON 数据
+        echo json_encode($resultsArray, JSON_PRETTY_PRINT);
+        exit();
     }
 }

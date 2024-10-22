@@ -19,8 +19,8 @@
             @endif
             <div style="margin-top: 20px;">
                 <button type="submit" class="btn btn-primary">Execute</button>
-                <a href="{{ url('/dev/export/excel') }}" class="btn btn-success">Export to Excel</a>
-                <a href="{{ url('/dev/export/json') }}" class="btn btn-info">Export to JSON</a>
+                <button type="button" class="btn btn-success" onclick="exportTo('excel')">Export to Excel</button>
+                <button type="button" class="btn btn-info" onclick="exportTo('json')">Export to JSON</button>
             </div>
         </form>
 
@@ -63,6 +63,16 @@
         function submitPage(page) {
             document.getElementById('page').value = page;
             document.getElementById('sqlForm').submit();
+        }
+
+        function exportTo(format) {
+            const sqlQuery = document.getElementById('sql').value;
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = format === 'excel' ? '/dev/export/excel' : '/dev/export/json';
+            form.innerHTML = `@csrf <input type="hidden" name="sql_query" value="${sqlQuery}">`;
+            document.body.appendChild(form);
+            form.submit();
         }
     </script>
 @endsection

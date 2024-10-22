@@ -27,6 +27,8 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::middleware('admin')->group(function () {
     Route::get('/dev', [DevController::class, 'index']);
     Route::post('/dev/execute', [DevController::class, 'executeQuery']);
+    Route::post('/dev/export/excel', [DevController::class, 'exportExcel']);
+    Route::post('/dev/export/json', [DevController::class, 'exportJson']);
 });
 
 
