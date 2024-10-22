@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Repositories\SqlLogRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -47,6 +48,8 @@ class DevService
             }
         }
 
+        $this->recordExecuteLog($sql, $error);
+
         return view('dev', [
             'results' => $results,
             'error' => $error,
@@ -56,20 +59,20 @@ class DevService
 
     public function exportExcel(Request $request)
     {
-        $sql = $request->input('sql_query');
-
-        // 去除 SQL 语句末尾的分号
-        $sql = rtrim($sql, ";");
-
-        // 验证 SQL 是否以 SELECT 开头
-        if (stripos(trim($sql), 'select') !== 0) {
-            return redirect()->back()->with('error', 'Only SELECT statements are allowed.');
-        }
-
         try {
+            $sql = $request->input('sql_query');
+            // 去除 SQL 语句末尾的分号
+            $sql = rtrim($sql, ";");
+            // 验证 SQL 是否以 SELECT 开头
+            if (stripos(trim($sql), 'select') !== 0) {
+                return redirect()->back()->with('error', 'Only SELECT statements are allowed.');
+            }
             // 执行 SQL 查询
             $results = DB::select($sql);
+            // 记录日志
+            $this->recordExecuteLog($sql);
         } catch (\Exception $e) {
+            $this->recordExecuteLog($e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
         }
 
@@ -122,7 +125,10 @@ class DevService
 
             // 执行 SQL 查询
             $results = DB::select($sql);
+            // 记录日志
+            $this->recordExecuteLog($sql);
         } catch (\Exception $e) {
+            $this->recordExecuteLog($e->getMessage());
             return redirect()->back()->with('error', $e->getMessage());
         }
 
@@ -140,5 +146,27 @@ class DevService
         // 输出 JSON 数据
         echo json_encode($resultsArray, JSON_PRETTY_PRINT);
         exit();
+    }
+
+    /**
+     * @param $sql
+     * @param string $error
+     * @return void
+     */
+    public function recordExecuteLog($sql, string $error = ''): void
+    {
+        $datetime = date('Y-m-d H:i:s');
+        $data     = [
+            'user_id'       => auth()->user()->getAuthIdentifier(),
+            'executed_at'   => $datetime,
+            'sql_statement' => $sql,
+            'error'         => $error,
+            'created_at'    => $datetime,
+            'updated_at'    => $datetime,
+        ];
+
+        /** @var SqlLogRepository $sqlLogRepository */
+        $sqlLogRepository = app(SqlLogRepository::class);
+        $sqlLogRepository->addLog($data);
     }
 }
