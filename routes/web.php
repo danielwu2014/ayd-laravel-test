@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DevController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,10 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::get('dev', function () {
-    return view('dev');
-})->middleware('admin');
+
+Route::middleware('admin')->group(function () {
+    Route::get('/dev', [DevController::class, 'index']);
+    Route::post('/dev/execute', [DevController::class, 'executeQuery']);
+});
+
+
