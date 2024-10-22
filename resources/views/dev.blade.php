@@ -7,7 +7,6 @@
         <form id="sqlForm" method="POST" action="/dev/execute" class="mb-4">
             @csrf
             <div class="form-group">
-                <label for="sql">SQL Query:</label>
                 <textarea name="sql" id="sql" rows="4" class="form-control">{{ old('sql', $sql ?? '') }}</textarea>
             </div>
 
